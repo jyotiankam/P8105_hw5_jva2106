@@ -1,0 +1,23 @@
+---
+title: "Hw_5"
+author: "Jyoti Ankam"
+date: "November 6, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+Loading the dataset into R
+
+```{r}
+plyr::ldply (.data = "./data/hw5_data.zip", .fun = unzip)
+
+files = list.files("./data", pattern = ".csv", full.names = TRUE)
+```
+
