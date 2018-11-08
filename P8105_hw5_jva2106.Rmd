@@ -10,14 +10,82 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(tidyverse)
-```
 
-Loading the dataset into R
+library(tidyverse)
+library(plotly)
+
+```
+Problem 1 
+
+Loading the dataset into R and extracting the paths of the files to name then into lists
 
 ```{r}
-plyr::ldply (.data = "./data/hw5_data.zip", .fun = unzip)
 
-files = list.files("./data", pattern = ".csv", full.names = TRUE)
+plyr::ldply(.data = "./data/hw5_data.zip", .fun = unzip)
+
+path_files = list.files("./data", pattern = ".csv", full.names = TRUE)
+
+names_files = basename(path_files)
+
 ```
 
+Using a function to read the data
+
+```{r}
+
+fn_read = function(data, tag_name){
+  list(read_csv(file = data) %>% mutate(identity = tag_name))
+}
+
+```
+
+In order to read all the csv files, we will iterate using the `map`function
+
+```{r}
+
+read_all = purrr::map2(path_files, names_files, fn_read)
+
+```
+
+Binding all the files together
+
+```{r}
+
+bind_all = purrr::map_df(read_all, bind_rows)
+
+data_tidy = bind_all %>% 
+  gather(key = week, value = val, week_1:week_8) %>% 
+  mutate(identity = str_replace(identity, ".csv",""),
+         week = as.numeric(str_replace(week, "week_", ""))) %>%
+  separate(identity, into = c("group", "identity"), sep = "_") %>%
+  mutate(identity = as.factor(identity))
+  
+ggplot(data_tidy, aes(x = week, y = val, color = identity, group = identity)) + geom_point() + geom_line() + facet_grid(~group) 
+
+```
+
+Problem 2 
+
+Reading the dataset into R
+
+```{r}
+
+homicide_df = read_csv("data/homicide-data.csv", col_names = TRUE) %>% 
+  mutate(city_with_state = str_c(city, ",", " ", state))
+
+```
+
+```{r}
+
+summary_df = homicide_df %>% 
+  mutate(disposition = fct_collapse(homicide_df$disposition, "No arrest" = c("Closed without arrest","Open/No arrest"))) %>% group_by(city_with_state) %>% 
+  count(disposition) %>% 
+  spread(key = disposition, value = n) %>% 
+  janitor::clean_names() %>% 
+  mutate(total = closed_by_arrest + no_arrest)
+
+```
+
+
+  
+  
