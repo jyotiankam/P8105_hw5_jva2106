@@ -17,7 +17,7 @@ library(plotly)
 ```
 Problem 1 
 
-Loading the dataset into R and extracting the paths of the files to name then into lists
+Loading the dataset into R and extracting the paths of the files to name them into lists
 
 ```{r}
 
@@ -94,7 +94,7 @@ summary_df = homicide_df %>%
 
 ```
 
-Now we will use the function prop.test to estimate the proportion of unsolved homicides in the city of Baltimore, MD
+Now we will use the function prop.test to estimate the total proportion of unsolved homicides in the city of Baltimore, MD
 
 ```{r}
 
