@@ -70,7 +70,7 @@ Reading the dataset into R
 
 ```{r}
 
-homicide_df = read_csv("data/homicide-data.csv", col_names = TRUE) %>% 
+homicide_df = read_csv("data1/homicide-data.csv", col_names = TRUE) %>% 
   mutate(city_with_state = str_c(city, ",", " ", state))
 
 ```
