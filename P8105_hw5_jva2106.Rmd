@@ -75,6 +75,14 @@ homicide_df = read_csv("data/homicide-data.csv", col_names = TRUE) %>%
 
 ```
 
+Describing the dataset
+
+This dataset collected by the Washington Post contains records on 52179 criminal homicides that occurred in 50 large American cities over the past decade. 
+In total there are `52179` observations and `13` variables such as name, race, age and sex. There is also information on the demographics e.g. city, state, longitude and latitude. Variable named `disposition` records the status of the homicide i.e if it was open with no arrest, closed without any arrest or closed with arrest.
+
+
+Obtaining the total number of homicides and the total number of unsolved cases
+
 ```{r}
 
 summary_df = homicide_df %>% 
@@ -83,6 +91,59 @@ summary_df = homicide_df %>%
   spread(key = disposition, value = n) %>% 
   janitor::clean_names() %>% 
   mutate(total = closed_by_arrest + no_arrest)
+
+```
+
+Now we will use the function prop.test to estimate the proportion of unsolved homicides in the city of Baltimore, MD
+
+```{r}
+
+balt = summary_df %>% filter(city_with_state == "Baltimore, MD")
+balt_prop = prop.test(balt$no_arrest, balt$total) %>% 
+  broom::tidy() %>% 
+  select(estimate, conf.low, conf.high) %>% 
+  janitor::clean_names() %>% 
+  knitr::kable()
+
+balt_prop
+```
+
+Running prop.test for each of the cities in the dataset, and extracting both the proportion of unsolved homicides and the confidence interval for each. Using a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnesting to create a tidy dataframe with estimated proportions and CIs for each city.
+
+Writing a function to do prop.test
+
+```{r}
+
+prop_df = function(data_table){
+  
+  try(prop.test(data_table$no_arrest, data_table$total) %>% 
+    broom::tidy() %>% 
+    select(estimate, conf.low, conf.high), silent = TRUE)
+}
+
+```
+
+Iteration
+
+```{r}
+
+unnested_df = summary_df %>% group_by(city_with_state) %>% nest() %>% 
+  mutate(estimate_ci = map(data, prop_df)) %>% filter(city_with_state != "Tulsa, AL") %>% unnest() %>% 
+  mutate(city_with_state = reorder(city_with_state, estimate)) %>% janitor::clean_names()
+
+```
+
+Creating a plot showing the estimates and CIs for each city
+
+```{r}
+
+ggplot(unnested_df, aes(x = city_with_state, y = estimate )) + 
+  geom_point() + geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) + 
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, size = 8)) +
+  labs(
+    x = "City with State",
+    y = "Proportion"
+  )
 
 ```
 
