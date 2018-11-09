@@ -21,46 +21,36 @@ Loading the dataset into R and extracting the paths of the files to name them in
 
 ```{r}
 
-plyr::ldply(.data = "./data/hw5_data.zip", .fun = unzip)
-
-path_files = list.files("./data", pattern = ".csv", full.names = TRUE)
-
-names_files = basename(path_files)
-
+paths_df = tibble(path = list.files("./data/", pattern = "*.csv", full.names = TRUE),
+                         name = basename(path))
 ```
 
 Using a function to read the data
 
 ```{r}
 
-fn_read = function(data, tag_name){
-  list(read_csv(file = data) %>% mutate(identity = tag_name))
-}
-
-```
-
-In order to read all the csv files, we will iterate using the `map`function
-
-```{r}
-
-read_all = purrr::map2(path_files, names_files, fn_read)
-
-```
-
-Binding all the files together
-
-```{r}
-
-bind_all = purrr::map_df(read_all, bind_rows)
-
-data_tidy = bind_all %>% 
-  gather(key = week, value = val, week_1:week_8) %>% 
-  mutate(identity = str_replace(identity, ".csv",""),
-         week = as.numeric(str_replace(week, "week_", ""))) %>%
-  separate(identity, into = c("group", "identity"), sep = "_") %>%
-  mutate(identity = as.factor(identity))
+read_df = function(data){
   
-ggplot(data_tidy, aes(x = week, y = val, color = identity, group = identity)) + geom_point() + geom_line() + facet_grid(~group) 
+  read_csv(file = data)
+  
+}
+```
+
+In order to read all the csv files, now iterating using the `map`function
+
+```{r}
+
+fn_df = paths_df %>% mutate(data = purrr::map(paths_df$path, read_df)) %>% 
+  unnest() %>% 
+  select(-path) %>% 
+  gather(key = week, value = value, week_1:week_8) %>% 
+  mutate(id = str_replace(name, ".csv",""),
+         week = as.numeric(str_replace(week, "week_", ""))) %>% 
+  separate(id, into = c("group", "id"), sep = "_") %>% 
+  mutate(id = as.factor(id))
+
+ggplot(fn_df, aes(x = week, y = value, color = id, group = id)) + geom_point() + geom_line() + facet_grid(~group) +
+  theme(legend.position = "right")
 
 ```
 
